@@ -1,5 +1,7 @@
 # Cisco Networks Multi Tenancy
 
+NOTE: THIS APP MAY NOT BE USED FOR COMMERCIAL PURPOSES
+
 ## How to use this
 1. Create a Splunk role for your tenant
 2. Create one or more Splunk indexes for your tenant
