@@ -9,3 +9,8 @@ modtime = 1479901304.143152000
 [app/install/state]
 version = 6.5.1
 modtime = 1481024668.516021000
+
+[views/cisco_networks_tenants]
+owner = admin
+version = 6.5.1
+modtime = 1481278162.758601000

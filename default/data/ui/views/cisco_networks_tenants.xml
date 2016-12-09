@@ -1,0 +1,91 @@
+<form>
+  <label>Tenants</label>
+  <description>Access for current user</description>
+  <search id="base_tenants">
+    <query>| inputlookup cisco_ios_tenants | stats values(index) AS index BY tenant_name,roles | search [| rest splunk_server=local "/services/authentication/users/$env:user$" | fields roles]</query>
+  </search>
+  <search base="base_tenants" id="base_tenants_index">
+    <query>| stats values(index) AS index | eval index=mvjoin(index,",") | table index</query>
+    <done>
+      <set token="indexes">$result.index$</set>
+    </done>
+  </search>
+  <fieldset submitButton="false">
+    <input type="time" token="time_period" searchWhenChanged="true">
+      <label>Time period</label>
+      <default>
+        <earliest>$earliest$</earliest>
+        <latest>$latest$</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Vitals</title>
+      <single>
+        <title>Current user</title>
+        <search>
+          <query>| makeresults | eval user="$env:user$" | fields user</query>
+        </search>
+      </single>
+      <single>
+        <title>Tenants</title>
+        <search base="base_tenants">
+          <query>| stats count(tenant_name)</query>
+        </search>
+      </single>
+      <single>
+        <title>Indexes</title>
+        <search base="base_tenants">
+          <query>| stats count(index)</query>
+        </search>
+      </single>
+      <single>
+        <search>
+          <query>| pivot Cisco_IOS_Event Cisco_IOS_Event count(Cisco_IOS_Event) AS "Count of Cisco IOS Event" SPLITROW _time AS _time PERIOD auto SORT 100 _time ROWSUMMARY 0 COLSUMMARY 0 NUMCOLS 0 SHOWOTHER 1</query>
+          <earliest>$time_period.earliest$</earliest>
+          <latest>$time_period.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x65a637","0x6db7c6","0xf7bc38","0xf58f39","0xd93f3c"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="showSparkline">0</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">percent</option>
+        <option name="trendInterval">auto</option>
+        <option name="underLabel">Events</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Tenants</title>
+      <table>
+        <title>Available tenants</title>
+        <search base="base_tenants"></search>
+      </table>
+      <table>
+        <title>Trends</title>
+        <search>
+          <query>| pivot Cisco_IOS_Event Cisco_IOS_Event count(Cisco_IOS_Event) AS count SPLITROW _time AS _time FILTER index in ("$indexes$") SPLITROW index PERIOD auto SORT 100 _time ROWSUMMARY 0 COLSUMMARY 0 NUMCOLS 100 SHOWOTHER 1 | lookup cisco_ios_tenants index OUTPUT tenant_name | stats sparkline by tenant_name</query>
+          <earliest>$time_period.earliest$</earliest>
+          <latest>$time_period.latest$</latest>
+        </search>
+        <format type="sparkline" field="sparkline">
+          <option name="lineColor">#5379af</option>
+          <option name="fillColor">#CCDDFF</option>
+          <option name="lineWidth">1</option>
+          <option name="maxSpotColor">#A2FFA2</option>
+          <option name="spotRadius">3</option>
+          <option name="height">25px</option>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
